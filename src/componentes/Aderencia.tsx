@@ -19,7 +19,8 @@ export function Aderencia({ analise }: { analise: Analise | null }) {
 
   const classe = classeDaNota(analise.nota)
   // "Lacunas" sem o texto padrão de quando não falta nada
-  const falta = analise.lacunas.filter((l) => !l.startsWith('Nenhum requisito'))
+  const falta = analise.lacunas.filter((l) => !l.startsWith('Nenhum requisito') && !l.startsWith('O robô não reconheceu'))
+  const semSinais = analise.lacunas.find((l) => l.startsWith('O robô não reconheceu'))
 
   async function copiar() {
     try {
@@ -36,6 +37,8 @@ export function Aderencia({ analise }: { analise: Analise | null }) {
         <div className={`nota-num ${classe}`}>{analise.nota}%</div>
         <div className="barra"><div className={`fundo-${classe}`} style={{ width: `${analise.nota}%` }} /></div>
       </div>
+
+      {semSinais && <p className="dica">{semSinais}</p>}
 
       <div className="bloco">
         <h3>Pontos fortes</h3>

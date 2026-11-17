@@ -1,3 +1,5 @@
+import type { Estimativa } from './salario'
+
 // Os "contratos" do app: o formato de cada coisa que circula entre telas, análise e banco.
 
 export type Experiencia = {
@@ -68,6 +70,8 @@ export type Analise = {
   faltando: string[]
   alertas: string[]
   mensagem: string
+  /** Estimativa de salário (currículos antigos não têm). */
+  salario?: Estimativa
 }
 
 export type Candidatura = {

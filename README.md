@@ -61,12 +61,24 @@ Nunca use a chave **secret / service_role** no site. A publishable pode ficar p�
 | `src/paginas/Perfil.tsx` | Trocar senha, cópia de segurança (.json) e apagar conta (pede a senha) |
 | `src/componentes/Folha.tsx` | A folha A4 (prévia) e o "Visualizar" em tela cheia |
 | `src/componentes/Aderencia.tsx` | A caixa da nota, pontos fortes e o que falta |
-| `src/lib/analise.ts` | O cérebro: lê a vaga, calcula a nota e monta o currículo |
+| `src/lib/analise.ts` | O cérebro: lê a vaga (de qualquer área), calcula a nota e monta o currículo |
+| `src/lib/salario.ts` | Estimativa de salário ("Quanto pedir") |
 | `src/lib/lerPdf.ts` | Lê o PDF do currículo (pdf.js) e preenche o currículo mestre |
 | `src/lib/curriculoHtml.ts` | O desenho do currículo (A4) |
 | `src/lib/pdf.ts` | Faz caber em 1 página e abre a impressão |
 | `src/lib/dados.ts` | Fala com o Supabase (ou com o navegador no modo demonstração) |
 | `supabase/schema.sql` | Tabelas, regras de segurança (RLS) e a função de apagar conta |
+
+## Quanto pedir (estimativa de salário)
+
+Fica abaixo da aderência. É uma referência, não garantia:
+
+1. Se a vaga informa o salário, mostra o valor da vaga (ignora VR, VT e outros benefícios).
+2. Vagas de tecnologia: faixa por área (front, back, full-stack), nível e regime (CLT/PJ), da [tabela de cargos e salários TI 2026 da Nerdin](https://www.nerdin.com.br/plano_de_cargos_e_salarios_ti.php).
+3. Outras profissões: piso, média e teto de contratação CLT do Novo CAGED, via [salario.com.br](https://www.salario.com.br/tabela-salarial/) (nov/2026), mais algumas médias nacionais.
+4. Cargo fora das tabelas: o app avisa e oferece uma busca, em vez de chutar.
+
+Os valores ficam em `src/lib/salario.ts` e precisam de atualização de tempos em tempos.
 
 ## Importar currículo em PDF
 

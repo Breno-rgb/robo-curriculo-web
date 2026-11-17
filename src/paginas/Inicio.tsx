@@ -8,6 +8,7 @@ import { imprimir } from '../lib/pdf'
 import { dados } from '../lib/dados'
 import { FolhaA4, Visualizador, useCurriculoPronto } from '../componentes/Folha'
 import { Aderencia } from '../componentes/Aderencia'
+import { Salario } from '../componentes/Salario'
 
 type Props = { mestre: Mestre; aoCriar: (c: Candidatura) => void }
 
@@ -85,6 +86,10 @@ export function Inicio({ mestre, aoCriar }: Props) {
 
           <section className="cartao">
             <Aderencia analise={ultima?.resultado.analise ?? null} />
+          </section>
+
+          <section className="cartao">
+            <Salario estimativa={ultima ? ultima.resultado.analise.salario : null} />
           </section>
         </div>
       </div>

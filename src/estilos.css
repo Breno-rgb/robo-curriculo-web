@@ -1,17 +1,19 @@
 /* Tema escuro. Cores ficam aqui em cima pra trocar fácil. */
 :root {
-  --fundo: #09090b;
-  --cartao: #131316;
-  --cartao-2: #1a1a1f;
-  --borda: #27272a;
-  --borda-forte: #3f3f46;
-  --texto: #f4f4f5;
-  --texto-2: #d4d4d8;
-  --suave: #a1a1aa;
-  --apagado: #71717a;
-  --laranja: #f97316;
-  --laranja-forte: #ea580c;
-  --laranja-suave: rgba(249, 115, 22, 0.12);
+  /* azul-marinho bem escuro no fundo, grafite nos cartões, verde nos detalhes */
+  --fundo: #070d1a;
+  --cartao: #151920;
+  --cartao-2: #1c2029;
+  --borda: #282e39;
+  --borda-forte: #3a4250;
+  --texto: #eef2f7;
+  --texto-2: #cfd6e0;
+  --suave: #94a0b2;
+  --apagado: #677386;
+  --destaque: #34d399;
+  --destaque-forte: #10b981;
+  --destaque-escuro: #04140d;
+  --destaque-suave: rgba(52, 211, 153, 0.12);
   --verde: #22c55e;
   --amarelo: #f59e0b;
   --vermelho: #ef4444;
@@ -25,23 +27,23 @@ body {
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
   color: var(--texto);
   background: var(--fundo);
-  background-image: radial-gradient(900px 400px at 85% -10%, rgba(249, 115, 22, 0.10), transparent 60%);
+  background-image: radial-gradient(900px 420px at 85% -10%, rgba(52, 211, 153, 0.07), transparent 60%), radial-gradient(700px 500px at 0% 0%, rgba(30, 58, 138, 0.25), transparent 70%);
   background-attachment: fixed;
   font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 button, input, textarea, select { font: inherit; color: inherit; }
-a { color: var(--laranja); }
-:focus-visible { outline: 2px solid var(--laranja); outline-offset: 2px; }
-::selection { background: rgba(249, 115, 22, 0.35); }
+a { color: var(--destaque); }
+:focus-visible { outline: 2px solid var(--destaque); outline-offset: 2px; }
+::selection { background: rgba(52, 211, 153, 0.3); }
 
 /* ---------- topo ---------- */
-.topo { border-bottom: 1px solid var(--borda); background: rgba(9, 9, 11, 0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 10; }
+.topo { border-bottom: 1px solid var(--borda); background: rgba(7, 13, 26, 0.82); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 10; }
 .topo-dentro { max-width: 1240px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 .marca { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--texto); font-weight: 700; font-size: 18px; letter-spacing: -0.02em; }
 .marca img { width: 34px; height: 34px; }
-.marca b { color: var(--laranja); font-weight: 700; }
+.marca b { color: var(--destaque); font-weight: 700; }
 .abas { display: flex; gap: 2px; margin-left: auto; flex-wrap: wrap; }
 .abas a { text-decoration: none; color: var(--suave); padding: 8px 12px; border-radius: 9px; font-size: 14px; font-weight: 500; }
 .abas a:hover { color: var(--texto); background: var(--cartao-2); }
@@ -72,27 +74,27 @@ input[type='text'], input[type='email'], input[type='password'], input[type='url
   width: 100%; border: 1px solid var(--borda); border-radius: 10px; padding: 10px 12px; background: var(--fundo); color: var(--texto);
 }
 input::placeholder, textarea::placeholder { color: var(--apagado); }
-input:focus, textarea:focus, select:focus { outline: none; border-color: var(--laranja); box-shadow: 0 0 0 3px var(--laranja-suave); }
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--destaque); box-shadow: 0 0 0 3px var(--destaque-suave); }
 textarea { resize: vertical; min-height: 70px; }
 select option { background: var(--cartao); }
 .campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .campo { min-width: 0; }
 .campo-inteiro { grid-column: 1 / -1; }
 .marcar { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--texto-2); margin: 0; }
-.marcar input { accent-color: var(--laranja); width: 16px; height: 16px; }
+.marcar input { accent-color: var(--destaque); width: 16px; height: 16px; }
 .dica { font-size: 13px; color: var(--suave); margin: 6px 0 0; }
 
 /* ---------- botões ---------- */
 .botao {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  border: 0; background: var(--laranja); color: #fff; font-weight: 600; padding: 10px 16px;
+  border: 0; background: var(--destaque); color: var(--destaque-escuro); font-weight: 600; padding: 10px 16px;
   border-radius: 10px; cursor: pointer; text-decoration: none; font-size: 14px; transition: background .15s, transform .05s;
 }
-.botao:hover { background: var(--laranja-forte); }
+.botao:hover { background: var(--destaque-forte); }
 .botao:active { transform: translateY(1px); }
 .botao:disabled { opacity: .5; cursor: not-allowed; }
 .botao.leve { background: var(--cartao-2); color: var(--texto); border: 1px solid var(--borda); font-weight: 500; }
-.botao.leve:hover { border-color: var(--borda-forte); background: #202026; }
+.botao.leve:hover { border-color: var(--borda-forte); background: #232834; }
 .botao.perigo { background: transparent; color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); font-weight: 500; }
 .botao.perigo:hover { background: rgba(239, 68, 68, 0.12); }
 .botao.perigo-cheio { background: var(--vermelho); }
@@ -100,11 +102,12 @@ select option { background: var(--cartao); }
 .botao.grande { padding: 14px 20px; font-size: 15px; width: 100%; }
 .botao.pequeno { padding: 6px 10px; font-size: 13px; }
 .botao.brilho {
-  background: linear-gradient(135deg, #f97316, #c2410c);
-  box-shadow: 0 8px 24px -8px rgba(249, 115, 22, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  background: linear-gradient(135deg, #6ee7b7, #10b981);
+  color: var(--destaque-escuro);
+  box-shadow: 0 8px 24px -10px rgba(52, 211, 153, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
-.botao.brilho:hover { background: linear-gradient(135deg, #fb923c, #ea580c); }
-.link-botao { background: none; border: 0; padding: 0; color: var(--laranja); cursor: pointer; font-size: 14px; }
+.botao.brilho:hover { background: linear-gradient(135deg, #a7f3d0, #34d399); }
+.link-botao { background: none; border: 0; padding: 0; color: var(--destaque); cursor: pointer; font-size: 14px; }
 .link-botao:hover { text-decoration: underline; }
 .linha { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
 .botoes-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
@@ -112,7 +115,7 @@ select option { background: var(--cartao); }
 /* ---------- mensagens ---------- */
 .erro { background: rgba(239, 68, 68, 0.1); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); padding: 10px 12px; border-radius: 10px; font-size: 14px; margin-top: 12px; }
 .ok { background: rgba(34, 197, 94, 0.1); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.3); padding: 10px 12px; border-radius: 10px; font-size: 14px; margin-top: 12px; }
-.aviso { background: rgba(249, 115, 22, 0.08); border: 1px solid rgba(249, 115, 22, 0.3); color: #fed7aa; padding: 12px 14px; border-radius: 12px; font-size: 14px; margin-bottom: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.aviso { background: rgba(52, 211, 153, 0.07); border: 1px solid rgba(52, 211, 153, 0.28); color: #a7f3d0; padding: 12px 14px; border-radius: 12px; font-size: 14px; margin-bottom: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .aviso > span { flex: 1; min-width: 200px; }
 .alertas { background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 10px; padding: 10px 12px; color: #fcd34d; }
 .vazio { color: var(--apagado); text-align: center; padding: 40px 10px; font-size: 14px; }
@@ -165,10 +168,10 @@ select option { background: var(--cartao); }
 
 /* ---------- chips editáveis ---------- */
 .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; border: 1px solid var(--borda); border-radius: 10px; padding: 6px; background: var(--fundo); }
-.chips:focus-within { border-color: var(--laranja); box-shadow: 0 0 0 3px var(--laranja-suave); }
-.chip { display: inline-flex; align-items: center; gap: 4px; background: var(--laranja-suave); color: #fdba74; border-radius: 99px; padding: 3px 4px 3px 10px; font-size: 13px; }
+.chips:focus-within { border-color: var(--destaque); box-shadow: 0 0 0 3px var(--destaque-suave); }
+.chip { display: inline-flex; align-items: center; gap: 4px; background: var(--destaque-suave); color: #6ee7b7; border-radius: 99px; padding: 3px 4px 3px 10px; font-size: 13px; }
 .chip button { border: 0; background: none; cursor: pointer; color: inherit; width: 20px; height: 20px; border-radius: 99px; line-height: 1; padding: 0; }
-.chip button:hover { background: rgba(249, 115, 22, 0.25); }
+.chip button:hover { background: rgba(52, 211, 153, 0.25); }
 .chips input { border: 0; outline: 0; flex: 1; min-width: 140px; padding: 4px; background: transparent; color: var(--texto); }
 
 /* ---------- editor do currículo ---------- */
@@ -182,7 +185,7 @@ select option { background: var(--cartao); }
 details.avancado summary { cursor: pointer; color: var(--suave); font-size: 14px; }
 details.avancado[open] summary { margin-bottom: 12px; }
 .barra-salvar {
-  position: fixed; left: 0; right: 0; bottom: 0; background: rgba(19, 19, 22, 0.95); backdrop-filter: blur(10px);
+  position: fixed; left: 0; right: 0; bottom: 0; background: rgba(21, 25, 32, 0.95); backdrop-filter: blur(10px);
   border-top: 1px solid var(--borda); padding: 12px 16px; display: flex; justify-content: center; gap: 12px; align-items: center; z-index: 20;
 }
 
@@ -205,3 +208,12 @@ details.avancado[open] summary { margin-bottom: 12px; }
 .zona-perigo { border-color: rgba(239, 68, 68, 0.35); }
 
 .so-leitor { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- quanto pedir ---------- */
+.salario-valor { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; color: var(--destaque); line-height: 1.1; }
+.salario-valor.apagado { color: var(--borda-forte); }
+.salario-faixa { margin: 6px 0 0; color: var(--texto-2); font-size: 14px; }
+.salario-faixa span { color: var(--suave); }
+.salario-detalhes { margin: 10px 0 0; padding-left: 18px; font-size: 13px; color: var(--suave); }
+.salario-detalhes li { margin-bottom: 3px; }
+.salario-fonte { font-size: 12px; color: var(--apagado); }

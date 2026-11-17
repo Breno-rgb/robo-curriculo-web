@@ -3,8 +3,10 @@
 
 import type { Analise, CurriculoMontado, Mestre } from './tipos'
 import { todasCompetencias } from './mestre'
+import { estimarSalario } from './salario'
 
-export const norm = (s = '') => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+import { norm } from './normalizar'
+export { norm }
 
 // ---------- catálogo: como cada tecnologia costuma aparecer escrita nas vagas ----------
 // "basica" = quase toda vaga cita, então pesa menos na nota.
@@ -72,10 +74,33 @@ const CATALOGO: ItemCatalogo[] = [
   { nome: 'Scrum', termos: ['scrum', 'kanban', 'metodologias ageis', 'agil'] },
   { nome: 'Jira', termos: ['jira'] },
   { nome: 'Linux', termos: ['linux'] },
+
+  // Fora da tecnologia: requisitos comuns em vagas de qualquer área.
+  { nome: 'Pacote Office', termos: ['pacote office', 'microsoft office', 'word', 'powerpoint'], basica: true },
+  { nome: 'Informática', termos: ['informatica basica', 'informatica intermediaria', 'conhecimentos em informatica', 'informatica'], basica: true },
+  { nome: 'CNH', termos: ['cnh', 'carteira de habilitacao', 'carteira nacional de habilitacao'] },
+  { nome: 'COREN', termos: ['coren'] },
+  { nome: 'CRC', termos: ['crc ativo', 'registro no crc'] },
+  { nome: 'CREA', termos: ['crea'] },
+  { nome: 'OAB', termos: ['oab'] },
+  { nome: 'SAP', termos: ['sap'] },
+  { nome: 'Atendimento ao cliente', termos: ['atendimento ao cliente', 'atendimento ao publico', 'atendimento a clientes', 'atendimento ao paciente'] },
+  { nome: 'Vendas', termos: ['vendas', 'metas de vendas', 'experiencia comercial'] },
+  { nome: 'Negociação', termos: ['negociacao'] },
+  { nome: 'Primeiros socorros', termos: ['primeiros socorros', 'suporte basico de vida', 'bls', 'acls'] },
+  { nome: 'Empilhadeira', termos: ['empilhadeira'] },
+  { nome: 'NR-10', termos: ['nr-10', 'nr 10', 'nr10'] },
+  { nome: 'NR-35', termos: ['nr-35', 'nr 35', 'nr35'] },
+  { nome: 'Libras', termos: ['libras'] },
+  { nome: 'Rotinas administrativas', termos: ['rotinas administrativas', 'rotina administrativa'] },
+  { nome: 'Faturamento', termos: ['faturamento'] },
+  { nome: 'Contas a pagar e receber', termos: ['contas a pagar', 'contas a receber'] },
+  { nome: 'Departamento pessoal', termos: ['departamento pessoal', 'folha de pagamento'] },
+  { nome: 'Redes sociais', termos: ['redes sociais', 'social media', 'instagram'] },
 ]
 
 const BASICA = new Set(CATALOGO.filter((c) => c.basica).map((c) => c.nome))
-const peso = (nome: string) => (BASICA.has(nome) ? 1 : 2)
+const pesoBase = (nome: string) => (BASICA.has(nome) ? 1 : 2)
 
 // Termos curtos (ts, js, api, git...) precisam ser palavra inteira; longos casam pelo começo
 // ("responsiv" pega "responsivo"). O "." antes bloqueia: "js" não casa dentro de "node.js".
@@ -150,13 +175,48 @@ function escolherTitulo(mestre: Mestre, cargo: string, texto: string) {
 
 const listar = (itens: string[]) => (itens.length > 1 ? `${itens.slice(0, -1).join(', ')} e ${itens.at(-1)}` : itens[0] ?? '')
 
+// ---------- cargo e formação (funciona pra qualquer área) ----------
+
+const PALAVRAS_VAZIAS = new Set(['de', 'da', 'do', 'das', 'dos', 'em', 'e', 'a', 'o', 'para', 'com', 'junior', 'jr', 'pleno', 'senior', 'sr', 'i', 'ii', 'iii', 'voluntario', 'voluntaria', 'freelancer', 'freela', 'temporario', 'estagiario', 'estagiaria'])
+// Palavras que sozinhas não dizem a profissão ("Chefe" de cozinha ≠ chefe escoteiro).
+const AMBIGUAS = new Set(['chefe', 'auxiliar', 'assistente', 'analista', 'tecnico', 'tecnica', 'operador', 'operadora', 'gerente', 'supervisor', 'supervisora', 'coordenador', 'coordenadora', 'agente', 'consultor', 'consultora', 'especialista', 'lider'])
+const palavras = (s: string) => norm(s).split(/[^a-z0-9]+/).filter((w) => w.length > 1 && !PALAVRAS_VAZIAS.has(w))
+
+/** "Técnico de Enfermagem" (sua experiência) × "Técnico de Enfermagem – UTI" (vaga) → mesmo cargo. */
+function mesmoCargo(seu: string, daVaga: string) {
+  const a = palavras(seu)
+  const b = new Set(palavras(daVaga))
+  if (!a.length || !b.size) return false
+  const iguais = a.filter((w) => b.has(w)).length
+  const precisa = AMBIGUAS.has(a[0]) ? Math.max(2, Math.ceil(a.length / 2)) : Math.ceil(a.length / 2)
+  return b.has(a[0]) && iguais >= Math.min(precisa, a.length)
+}
+
+/** A vaga cita o curso? Ex.: "cursando Análise e Desenvolvimento de Sistemas", "formação técnica em enfermagem". */
+function formacaoCitada(curso: string, texto: string) {
+  const nucleo = norm(curso)
+    .replace(/^(curso )?(tecnico|tecnologo|tecnologia|bacharelado|licenciatura|graduacao|pos-graduacao|mba|especializacao)( em| de)?\s+/, '')
+    .replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim()
+  return nucleo.length >= 6 && texto.includes(nucleo)
+}
+
 export type Vaga = { empresa: string; cargo: string; texto: string }
 
 export function analisar(mestre: Mestre, vaga: Vaga): { curriculo: CurriculoMontado; analise: Analise } {
   const cargo = vaga.cargo
   const texto = norm(`${cargo}\n${vaga.texto}`)
   const [obrig, dif] = separar(texto)
-  const competencias = todasCompetencias(mestre)
+  // Competências técnicas + comportamentais (as comportamentais pesam pouco: quase toda vaga pede "comunicação").
+  // + o que aparece escrito nas suas experiências, projetos e formação (ex.: "atendimento ao paciente" num bullet).
+  const textoDoMestre = norm([
+    ...mestre.experiencias.flatMap((e) => [e.cargo, ...e.bullets]),
+    ...mestre.projetos.flatMap((p) => [p.descricao, ...p.destaques, ...p.stack]),
+    ...mestre.formacao.map((f) => f.curso),
+  ].join('\n'))
+  const naExperiencia = CATALOGO.filter((c) => c.termos.some((t) => aparece(textoDoMestre, t))).map((c) => c.nome)
+  const competencias = [...new Set([...todasCompetencias(mestre), ...mestre.comportamentais, ...naExperiencia])]
+  const comportamental = new Set(mestre.comportamentais.map(norm))
+  const peso = (nome: string) => (comportamental.has(norm(nome)) ? 1 : pesoBase(nome))
 
   // 1. Suas competências que a vaga cita (mais importantes primeiro).
   const pedidas = competencias
@@ -164,15 +224,24 @@ export function analisar(mestre: Mestre, vaga: Vaga): { curriculo: CurriculoMont
     .sort((a, b) => peso(b) - peso(a) || Number(citada(obrig, b)) - Number(citada(obrig, a)))
 
   // 2. O que a vaga pede e você não tem.
-  const voceTem = (nome: string) => competencias.some((c) => norm(c) === norm(nome))
+  // Quem já lista tecnologia ou Excel no currículo obviamente sabe "informática".
+  const sabeInformatica = competencias.some((c) => ['excel', 'pacote office', 'javascript', 'html', 'python', 'sql', 'power bi'].includes(norm(c)))
+  const voceTem = (nome: string) => competencias.some((c) => norm(c) === norm(nome)) || (nome === 'Informática' && sabeInformatica)
   const fora = CATALOGO.filter((c) => !voceTem(c.nome))
   const lacunas = fora.filter((c) => citada(obrig, c.nome)).map((c) => c.nome)
   const diferenciais = fora.filter((c) => !lacunas.includes(c.nome) && citada(dif, c.nome)).map((c) => c.nome)
 
-  // 3. Nota: diferencial vale metade; competência básica vale metade de uma específica.
+  // 3. Já trabalhou no cargo? Tem a formação que a vaga pede? (vale pra qualquer área)
+  const experienciaNoCargo = mestre.experiencias.find((e) => mesmoCargo(e.cargo, cargo))
+  const formacaoPedida = mestre.formacao.find((f) => formacaoCitada(f.curso, texto))
+
+  // 4. Nota: diferencial vale metade; competência básica vale metade de uma específica.
   const temPeso = pedidas.reduce((s, c) => s + peso(c) * (citada(obrig, c) ? 1 : 0.5), 0)
+    + (experienciaNoCargo ? 4 : 0) + (formacaoPedida ? 2 : 0)
   const faltaPeso = lacunas.reduce((s, c) => s + peso(c), 0) + diferenciais.reduce((s, c) => s + peso(c) * 0.5, 0)
-  const nota = temPeso + faltaPeso ? Math.round((temPeso / (temPeso + faltaPeso)) * 100) : 50
+  // Sem nada pra comparar (nem o que você tem, nem o que falta), a nota não diz nada: fica 0 com aviso.
+  const semSinais = !temPeso && !faltaPeso
+  const nota = semSinais ? 0 : Math.round((temPeso / (temPeso + faltaPeso)) * 100)
 
   // 4. Projetos: "fixo" primeiro; o resto por tecnologias + temas em comum com a vaga.
   const pontuados = mestre.projetos
@@ -207,23 +276,26 @@ export function analisar(mestre: Mestre, vaga: Vaga): { curriculo: CurriculoMont
   const nomeCurto = projetoTop ? projetoTop.nome.split(' — ')[0] : ''
   const novas = pedidas.filter((c) => !citada(norm(mestre.resumo_base), c)).slice(0, 3)
   let resumo = mestre.resumo_base.trim()
-  if (novas.length) resumo += ` Também utilizo ${listar(novas)} em projetos${nomeCurto ? `, como o ${nomeCurto}` : ''}.`
+  if (novas.length && mestre.projetos.length) resumo += ` Também utilizo ${listar(novas)} em projetos${nomeCurto ? `, como o ${nomeCurto}` : ''}.`
+  else if (novas.length) resumo += ` Tenho experiência com ${listar(novas)}.`
   else if (nomeCurto) resumo += ` Projeto em destaque: ${nomeCurto}.`
 
   const destaque = pedidas.slice(0, 3)
-  let mensagem = `Olá! Vi a vaga de ${cargo || 'desenvolvimento'} na ${vaga.empresa || 'empresa'} e me candidatei. `
+  let mensagem = `Olá! Vi a vaga${cargo ? ` de ${cargo}` : ''}${vaga.empresa ? ` na ${vaga.empresa}` : ''} e me candidatei. `
+  if (experienciaNoCargo) mensagem += `Já atuei como ${experienciaNoCargo.cargo}${experienciaNoCargo.local ? ` (${experienciaNoCargo.local})` : ''}. `
   if (destaque.length) mensagem += `Tenho experiência prática com ${listar(destaque)}. `
   if (projetoTop?.link) mensagem += `Um projeto que mostra bem isso é o ${nomeCurto}: ${projetoTop.link}. `
   if (mestre.contatos.portfolio) mensagem += `Mais projetos em ${mestre.contatos.portfolio}. `
   mensagem += 'Fico à disposição para conversar!'
 
   const pontos_fortes: string[] = []
-  pontos_fortes.push(pedidas.length
-    ? `A vaga cita ${pedidas.length} competência(s) que você tem: ${pedidas.join(', ')}`
-    : 'A vaga não cita nenhuma das suas competências pelo nome. Leia com atenção antes de se candidatar.')
+  if (pedidas.length) pontos_fortes.push(`A vaga cita ${pedidas.length} competência(s) que você tem: ${pedidas.join(', ')}`)
+  else if (!experienciaNoCargo && !formacaoPedida) pontos_fortes.push('A vaga não cita nenhuma das suas competências pelo nome. Leia com atenção antes de se candidatar.')
   if (maisParecido && maisParecido.pontos > 0) {
     pontos_fortes.push(`Projeto mais parecido com a vaga: ${maisParecido.p.nome} (${[...maisParecido.techs, ...maisParecido.temas].join(', ')})`)
   }
+  if (experienciaNoCargo) pontos_fortes.unshift(`Você já trabalhou como ${experienciaNoCargo.cargo}${experienciaNoCargo.periodo ? ` (${experienciaNoCargo.periodo})` : ''}.`)
+  if (formacaoPedida) pontos_fortes.push(`A vaga cita a sua formação: ${formacaoPedida.curso}.`)
   if (/estagi/.test(norm(cargo))) pontos_fortes.push('Vaga de estágio: confira se o seu curso e semestre batem com o que pedem.')
 
   const curriculo: CurriculoMontado = {
@@ -247,7 +319,9 @@ export function analisar(mestre: Mestre, vaga: Vaga): { curriculo: CurriculoMont
       nota,
       pontos_fortes,
       lacunas: [
-        ...(lacunas.length
+        ...(semSinais
+          ? ['O robô não reconheceu os requisitos dessa vaga, então a nota não diz muito. Leia a vaga com atenção.']
+          : lacunas.length
           ? lacunas.map((l) => `Requisito: ${l} (não está no seu currículo)`)
           : ['Nenhum requisito obrigatório fora do seu currículo foi encontrado (confira a descrição mesmo assim).']),
         ...diferenciais.map((d) => `Diferencial (não obrigatório): ${d}`),
@@ -255,6 +329,7 @@ export function analisar(mestre: Mestre, vaga: Vaga): { curriculo: CurriculoMont
       faltando: [...pedidas, ...lacunas].filter((k) => !conteudo.includes(norm(k))),
       alertas: alertasDeNivel(texto, cargo, mestre),
       mensagem,
+      salario: estimarSalario(cargo, vaga.texto),
     },
   }
 }
