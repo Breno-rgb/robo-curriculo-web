@@ -81,7 +81,8 @@ export function MeuCurriculo({ mestre, aoSalvar }: Props) {
   const [salvando, setSalvando] = useState(false)
   const [msg, setMsg] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null)
   const [lendoPdf, setLendoPdf] = useState(false)
-  const [confirmarExemplo, setConfirmarExemplo] = useState(false)
+  // Qual botão está pedindo confirmação agora (os dois apagam o que está preenchido).
+  const [confirmando, setConfirmando] = useState<'exemplo' | 'limpar' | null>(null)
   const arquivo = useRef<HTMLInputElement>(null)
 
   const alterado = JSON.stringify(m) !== JSON.stringify(mestre)
@@ -136,10 +137,18 @@ export function MeuCurriculo({ mestre, aoSalvar }: Props) {
   }
 
   function gerarExemplo() {
-    if (!vazio && !confirmarExemplo) return setConfirmarExemplo(true)
-    setConfirmarExemplo(false)
+    if (!vazio && confirmando !== 'exemplo') return setConfirmando('exemplo')
+    setConfirmando(null)
     trocarTudo(mestreExemplo())
     setMsg({ tipo: 'ok', texto: 'Exemplo preenchido. Troque pelos seus dados e salve.' })
+  }
+
+  // Esvazia o formulário. Só vale de verdade depois do "Salvar" (antes disso, "Desfazer" volta tudo).
+  function limparTudo() {
+    if (confirmando !== 'limpar') return setConfirmando('limpar')
+    setConfirmando(null)
+    trocarTudo(mestreVazio())
+    setMsg({ tipo: 'ok', texto: 'Tudo limpo. Clique em Salvar pra confirmar (ou Desfazer pra voltar).' })
   }
 
   const novoProjeto = (): Projeto => ({ id: novoId(), nome: '', link: '', codigo: '', stack: [], descricao: '', destaques: [], palavras: [], fixo: false })
@@ -158,13 +167,23 @@ export function MeuCurriculo({ mestre, aoSalvar }: Props) {
             {lendoPdf ? 'Lendo o PDF…' : 'Importar currículo (PDF)'}
           </button>
           <input ref={arquivo} type="file" accept="application/pdf,.pdf" hidden onChange={(e) => importarPdf(e.target.files?.[0])} />
-          {confirmarExemplo ? (
+          {confirmando === 'exemplo' ? (
             <>
-              <button type="button" className="botao perigo-cheio" onClick={gerarExemplo}>Substituir pelo exemplo</button>
-              <button type="button" className="botao leve" onClick={() => setConfirmarExemplo(false)}>Cancelar</button>
+              <span className="dica" style={{ margin: 0, alignSelf: 'center' }}>Substituir o que está preenchido?</span>
+              <button type="button" className="botao perigo-cheio" onClick={gerarExemplo}>Confirmar</button>
+              <button type="button" className="botao leve" onClick={() => setConfirmando(null)}>Cancelar</button>
+            </>
+          ) : confirmando === 'limpar' ? (
+            <>
+              <span className="dica" style={{ margin: 0, alignSelf: 'center' }}>Apagar tudo que está preenchido?</span>
+              <button type="button" className="botao perigo-cheio" onClick={limparTudo}>Confirmar</button>
+              <button type="button" className="botao leve" onClick={() => setConfirmando(null)}>Cancelar</button>
             </>
           ) : (
-            <button type="button" className="botao brilho" onClick={gerarExemplo}>✦ Gerar exemplo</button>
+            <>
+              {!vazio && <button type="button" className="botao perigo" onClick={limparTudo}>Limpar tudo</button>}
+              <button type="button" className="botao brilho" onClick={gerarExemplo}>✦ Gerar exemplo</button>
+            </>
           )}
         </div>
       </div>
