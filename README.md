@@ -102,7 +102,7 @@ A pessoa sempre confere antes de salvar.
 
 Opcional: `GEMINI_MODEL` pra escolher o modelo (padrão: `gemini-3.5-flash`, com reservas automáticas).
 
-Privacidade: no plano grátis o Google pode usar o que é enviado pra melhorar os produtos dele. Pra um app com usuários de verdade, vale ativar o plano pago (cobra centavos por currículo) ou avisar isso na tela.
+Privacidade: antes de importar, a pessoa escolhe "Ler com IA" ou "Ler sem IA", e a tela avisa que com IA o texto vai pro Google. No plano grátis o Google pode usar o que é enviado pra melhorar os produtos dele; no plano pago (centavos por currículo), não.
 
 ## Apagar conta
 

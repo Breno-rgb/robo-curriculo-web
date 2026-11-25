@@ -81,6 +81,9 @@ export function MeuCurriculo({ mestre, aoSalvar }: Props) {
   const [salvando, setSalvando] = useState(false)
   const [msg, setMsg] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null)
   const [lendoPdf, setLendoPdf] = useState(false)
+  // Antes de escolher o PDF, a pessoa decide se quer usar a IA (o texto vai pro Google) ou não.
+  const [escolhendoLeitura, setEscolhendoLeitura] = useState(false)
+  const usarIA = useRef(true)
   // Qual botão está pedindo confirmação agora (os dois apagam o que está preenchido).
   const [confirmando, setConfirmando] = useState<'exemplo' | 'limpar' | null>(null)
   const arquivo = useRef<HTMLInputElement>(null)
@@ -128,13 +131,12 @@ export function MeuCurriculo({ mestre, aoSalvar }: Props) {
     try {
       const linhas = await textoDoPdf(f)
       if (linhas.length < 3) throw new Error('Não deu pra ler texto nesse PDF (ele pode ser uma imagem escaneada).')
-      const comIA = await lerCurriculoComIA(linhas)
+      const pediuIA = usarIA.current
+      const comIA = pediuIA ? await lerCurriculoComIA(linhas) : null
       const lido = { ...(comIA ?? lerCurriculo(linhas)), cor: m.cor }
       trocarTudo(lido)
-      setMsg({
-        tipo: 'ok',
-        texto: `Lemos: ${resumoDoImport(lido) || 'pouca coisa'}. Confira e clique em Salvar.${comIA ? '' : ' (Leitura sem IA: confira com atenção.)'}`,
-      })
+      const aviso = comIA ? '' : pediuIA ? ' (A IA não está disponível agora, então lemos sem IA: confira com atenção.)' : ' (Leitura sem IA: confira com atenção.)'
+      setMsg({ tipo: 'ok', texto: `Lemos: ${resumoDoImport(lido) || 'pouca coisa'}. Confira e clique em Salvar.${aviso}` })
     } catch (falha) {
       const texto = (falha as Error).message
       setMsg({ tipo: 'erro', texto: /^(Não|Muita|Entre|A IA)/.test(texto) ? texto : 'Não consegui ler esse PDF. Tente outro arquivo.' })
@@ -194,7 +196,7 @@ export function MeuCurriculo({ mestre, aoSalvar }: Props) {
           <p className="sub">Tudo que é verdade sobre você. Pra cada vaga, o robô escolhe o que combina. Nenhum campo é obrigatório.</p>
         </div>
         <div className="ferramentas">
-          <button type="button" className="botao leve" onClick={() => arquivo.current?.click()} disabled={lendoPdf}>
+          <button type="button" className="botao leve" onClick={() => { setEscolhendoLeitura((v) => !v); setConfirmando(null) }} disabled={lendoPdf} aria-expanded={escolhendoLeitura}>
             {lendoPdf ? 'Lendo o PDF…' : 'Importar PDF'}
           </button>
           <input ref={arquivo} type="file" accept="application/pdf,.pdf" hidden onChange={(e) => importarPdf(e.target.files?.[0])} />
@@ -220,6 +222,23 @@ export function MeuCurriculo({ mestre, aoSalvar }: Props) {
           )}
         </div>
       </div>
+
+      {escolhendoLeitura && (
+        <div className="escolha-leitura" role="group" aria-label="Como ler o PDF">
+          <div>
+            <strong>Como ler o seu PDF?</strong>
+            <p>
+              <b>Com IA</b>: organiza bem qualquer modelo de currículo. O texto do currículo é enviado pra IA do Google (Gemini) só pra ser organizado.<br />
+              <b>Sem IA</b>: tudo fica no seu navegador, mas pode errar em currículos com colunas ou ícones.
+            </p>
+          </div>
+          <div className="ferramentas">
+            <button type="button" className="botao brilho" onClick={() => { usarIA.current = true; setEscolhendoLeitura(false); arquivo.current?.click() }}>✦ Ler com IA</button>
+            <button type="button" className="botao leve" onClick={() => { usarIA.current = false; setEscolhendoLeitura(false); arquivo.current?.click() }}>Ler sem IA</button>
+            <button type="button" className="link-botao" onClick={() => setEscolhendoLeitura(false)}>Cancelar</button>
+          </div>
+        </div>
+      )}
 
       <p className="dica-caixa">
         <span aria-hidden="true">💡</span>
