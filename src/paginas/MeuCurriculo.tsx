@@ -2,8 +2,8 @@
 // O robô nunca escreve aqui: ele só lê, escolhe e reordena.
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import type { Experiencia, Formacao, Mestre, Projeto } from '../lib/tipos'
-import { mestreExemplo, mestreVazio, novoId } from '../lib/mestre'
-import { lerCurriculo, resumoDoImport, textoDoPdf } from '../lib/lerPdf'
+import { importarMestre, mestreExemplo, mestreVazio, novoId } from '../lib/mestre'
+import { lerCurriculo, lerCurriculoComIA, resumoDoImport, textoDoPdf } from '../lib/lerPdf'
 import { Chips } from '../componentes/Chips'
 
 type Props = { mestre: Mestre; aoSalvar: (m: Mestre) => Promise<void> }
@@ -84,6 +84,7 @@ export function MeuCurriculo({ mestre, aoSalvar }: Props) {
   // Qual botão está pedindo confirmação agora (os dois apagam o que está preenchido).
   const [confirmando, setConfirmando] = useState<'exemplo' | 'limpar' | null>(null)
   const arquivo = useRef<HTMLInputElement>(null)
+  const arquivoJson = useRef<HTMLInputElement>(null)
 
   const alterado = JSON.stringify(m) !== JSON.stringify(mestre)
   const semIds = (x: Mestre) => JSON.stringify({ ...x, grupos: x.grupos.map((g) => g.itens) })
@@ -118,7 +119,8 @@ export function MeuCurriculo({ mestre, aoSalvar }: Props) {
     }
   }
 
-  // Lê o PDF do currículo e preenche o que conseguir. Nada é salvo antes da pessoa conferir.
+  // Lê o PDF do currículo e preenche. Primeiro tenta com IA (organiza bem qualquer modelo de currículo);
+  // se a IA não estiver disponível, usa o leitor sem IA. Nada é salvo antes da pessoa conferir.
   async function importarPdf(f: File | undefined) {
     if (arquivo.current) arquivo.current.value = ''
     if (!f) return
@@ -126,14 +128,43 @@ export function MeuCurriculo({ mestre, aoSalvar }: Props) {
     try {
       const linhas = await textoDoPdf(f)
       if (linhas.length < 3) throw new Error('Não deu pra ler texto nesse PDF (ele pode ser uma imagem escaneada).')
-      const lido = lerCurriculo(linhas)
+      const comIA = await lerCurriculoComIA(linhas)
+      const lido = { ...(comIA ?? lerCurriculo(linhas)), cor: m.cor }
       trocarTudo(lido)
-      setMsg({ tipo: 'ok', texto: `Lemos: ${resumoDoImport(lido) || 'pouca coisa'}. Confira e clique em Salvar.` })
+      setMsg({
+        tipo: 'ok',
+        texto: `Lemos: ${resumoDoImport(lido) || 'pouca coisa'}. Confira e clique em Salvar.${comIA ? '' : ' (Leitura sem IA: confira com atenção.)'}`,
+      })
     } catch (falha) {
-      setMsg({ tipo: 'erro', texto: (falha as Error).message.startsWith('Não deu') ? (falha as Error).message : 'Não consegui ler esse PDF. Tente outro arquivo.' })
+      const texto = (falha as Error).message
+      setMsg({ tipo: 'erro', texto: /^(Não|Muita|Entre|A IA)/.test(texto) ? texto : 'Não consegui ler esse PDF. Tente outro arquivo.' })
     } finally {
       setLendoPdf(false)
     }
+  }
+
+  // Arquivo .json: o jeito mais preciso (cada informação já vem no lugar certo).
+  async function importarJson(f: File | undefined) {
+    if (arquivoJson.current) arquivoJson.current.value = ''
+    if (!f) return
+    setMsg(null)
+    try {
+      const lido = { ...importarMestre(await f.text()), cor: m.cor }
+      trocarTudo(lido)
+      setMsg({ tipo: 'ok', texto: `Lemos: ${resumoDoImport(lido) || 'pouca coisa'}. Confira e clique em Salvar.` })
+    } catch (falha) {
+      setMsg({ tipo: 'erro', texto: falha instanceof SyntaxError ? 'Esse arquivo não é um JSON válido.' : (falha as Error).message })
+    }
+  }
+
+  // Modelo em branco pra preencher (ou pedir pra uma IA preencher com o seu currículo).
+  function baixarModelo() {
+    const blob = new Blob([JSON.stringify(mestreExemplo(), null, 2)], { type: 'application/json' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = 'modelo-curriculo-mestre.json'
+    a.click()
+    URL.revokeObjectURL(a.href)
   }
 
   function gerarExemplo() {
@@ -164,9 +195,11 @@ export function MeuCurriculo({ mestre, aoSalvar }: Props) {
         </div>
         <div className="ferramentas">
           <button type="button" className="botao leve" onClick={() => arquivo.current?.click()} disabled={lendoPdf}>
-            {lendoPdf ? 'Lendo o PDF…' : 'Importar currículo (PDF)'}
+            {lendoPdf ? 'Lendo o PDF…' : 'Importar PDF'}
           </button>
           <input ref={arquivo} type="file" accept="application/pdf,.pdf" hidden onChange={(e) => importarPdf(e.target.files?.[0])} />
+          <button type="button" className="botao leve" onClick={() => arquivoJson.current?.click()} disabled={lendoPdf}>Importar JSON</button>
+          <input ref={arquivoJson} type="file" accept="application/json,.json" hidden onChange={(e) => importarJson(e.target.files?.[0])} />
           {confirmando === 'exemplo' ? (
             <>
               <span className="dica" style={{ margin: 0, alignSelf: 'center' }}>Substituir o que está preenchido?</span>
@@ -187,6 +220,16 @@ export function MeuCurriculo({ mestre, aoSalvar }: Props) {
           )}
         </div>
       </div>
+
+      <p className="dica-caixa">
+        <span aria-hidden="true">💡</span>
+        <span>
+          <strong>Dica:</strong> importar em <strong>JSON</strong> é o jeito mais preciso, porque cada informação já vem no lugar certo.
+          Já tem uma cópia? Ela fica em <a href="#perfil">Perfil → Cópia de segurança</a>. Não tem?{' '}
+          <button type="button" className="link-botao" onClick={baixarModelo}>Baixe o modelo</button> e preencha,
+          ou use <strong>Importar PDF</strong> que o robô organiza pra você.
+        </span>
+      </p>
 
       <Secao titulo="Dados pessoais">
         <div className="campos">

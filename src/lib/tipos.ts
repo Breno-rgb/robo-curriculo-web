@@ -46,6 +46,8 @@ export type Mestre = {
   projetos: Projeto[]
   formacao: Formacao[]
   idiomas: string[]
+  /** Cor dos detalhes do PDF (id de CORES em curriculoHtml.ts). Vazio = laranja. */
+  cor?: string
 }
 
 /** O currículo já montado para UMA vaga (é isso que vira PDF). */

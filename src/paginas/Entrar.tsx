@@ -1,5 +1,6 @@
 // Tela de entrada: entrar, criar conta ou recuperar a senha.
 import { useState, type FormEvent } from 'react'
+import { marcarTutorialPendente } from '../lib/tutorial'
 import { dados } from '../lib/dados'
 
 type Modo = 'entrar' | 'cadastrar' | 'esqueci'
@@ -20,6 +21,7 @@ export function Entrar() {
     try {
       if (modo === 'entrar') await dados.entrar(email, senha)
       if (modo === 'cadastrar') {
+        marcarTutorialPendente() // antes, porque ao cadastrar a pessoa já entra
         const { precisaConfirmar } = await dados.cadastrar(email, senha)
         if (precisaConfirmar) setOk('Conta criada! Enviamos um link pro seu e-mail. Clique nele e depois entre aqui.')
       }

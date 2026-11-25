@@ -68,8 +68,8 @@ export function importarMestre(json: string): Mestre {
   const d: Bruto = JSON.parse(json)
   if (!d || typeof d !== 'object' || typeof d.nome !== 'string') throw new Error('Esse arquivo não parece um currículo-mestre.')
 
-  // Já está no formato deste site.
-  if (Array.isArray(d.grupos)) return { ...mestreVazio(), ...d } as Mestre
+  // Já está no formato deste site (ou veio da leitura do PDF com IA).
+  if (Array.isArray(d.grupos)) return normalizarMestre(d)
 
   // Formato do robô de terminal.
   const base = mestreVazio()
@@ -107,6 +107,44 @@ export function importarMestre(json: string): Mestre {
     })),
     formacao: (d.formacao || []).map((f: Bruto) => ({ id: novoId(), curso: texto(f.curso), instituicao: texto(f.instituicao), periodo: texto(f.periodo) })),
     idiomas: lista(d.idiomas),
+  }
+}
+
+/**
+ * Arruma um currículo no formato deste site que veio de fora (arquivo .json ou IA):
+ * garante que todo campo existe, com o tipo certo, e que cada item tem id.
+ */
+export function normalizarMestre(d: Bruto): Mestre {
+  const base = mestreVazio()
+  const obj = (v: unknown): Bruto => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Bruto) : {})
+  const itens = (v: unknown): Bruto[] => (Array.isArray(v) ? v.filter((x) => x && typeof x === 'object') : [])
+  const contatos = obj(d.contatos)
+  const titulos = obj(d.titulos)
+  const grupos = itens(d.grupos)
+    .map((g) => ({ id: texto(g.id) || novoId(), nome: texto(g.nome), itens: lista(g.itens) }))
+    .filter((g) => g.nome || g.itens.length)
+  return {
+    nome: texto(d.nome),
+    titulo_padrao: texto(d.titulo_padrao),
+    titulos: { front: texto(titulos.front), full: texto(titulos.full), back: texto(titulos.back), estagio: texto(titulos.estagio) },
+    contatos: Object.fromEntries(Object.keys(base.contatos).map((k) => [k, texto(contatos[k]).replace(/^https?:\/\//, '')])) as Mestre['contatos'],
+    resumo_base: texto(d.resumo_base),
+    grupos: grupos.length ? grupos : base.grupos,
+    comportamentais: lista(d.comportamentais),
+    experiencias: itens(d.experiencias)
+      .map((e) => ({ id: texto(e.id) || novoId(), cargo: texto(e.cargo), local: texto(e.local), periodo: texto(e.periodo), bullets: lista(e.bullets), opcional: Boolean(e.opcional) }))
+      .filter((e) => e.cargo || e.local || e.bullets.length),
+    projetos: itens(d.projetos)
+      .map((p) => ({
+        id: texto(p.id) || novoId(), nome: texto(p.nome), link: texto(p.link).replace(/^https?:\/\//, ''), codigo: texto(p.codigo).replace(/^https?:\/\//, ''),
+        stack: lista(p.stack), descricao: texto(p.descricao), destaques: lista(p.destaques), palavras: lista(p.palavras), fixo: Boolean(p.fixo),
+      }))
+      .filter((p) => p.nome || p.descricao),
+    formacao: itens(d.formacao)
+      .map((f) => ({ id: texto(f.id) || novoId(), curso: texto(f.curso), instituicao: texto(f.instituicao), periodo: texto(f.periodo) }))
+      .filter((f) => f.curso || f.instituicao),
+    idiomas: lista(d.idiomas),
+    ...(typeof d.cor === 'string' ? { cor: d.cor } : {}),
   }
 }
 

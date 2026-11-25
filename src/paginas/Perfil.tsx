@@ -4,10 +4,10 @@ import type { Mestre } from '../lib/tipos'
 import { importarMestre } from '../lib/mestre'
 import { dados } from '../lib/dados'
 
-type Props = { email: string; mestre: Mestre; aoImportar: (m: Mestre) => Promise<void> }
+type Props = { email: string; mestre: Mestre; aoImportar: (m: Mestre) => Promise<void>; aoVerTutorial: () => void }
 type Msg = { tipo: 'ok' | 'erro'; texto: string } | null
 
-export function Perfil({ email, mestre, aoImportar }: Props) {
+export function Perfil({ email, mestre, aoImportar, aoVerTutorial }: Props) {
   const [novaSenha, setNovaSenha] = useState('')
   const [msgSenha, setMsgSenha] = useState<Msg>(null)
   const [msgBackup, setMsgBackup] = useState<Msg>(null)
@@ -81,6 +81,12 @@ export function Perfil({ email, mestre, aoImportar }: Props) {
           <input ref={arquivo} type="file" accept="application/json,.json" hidden onChange={(e) => importar(e.target.files?.[0])} />
         </div>
         {msgBackup && <div className={msgBackup.tipo} role="status">{msgBackup.texto}</div>}
+      </section>
+
+      <section className="cartao">
+        <h2>Como usar o app</h2>
+        <p className="sub">Reveja o passo a passo que aparece quando você cria a conta.</p>
+        <button className="botao leve" onClick={aoVerTutorial}>Ver o tutorial de novo</button>
       </section>
 
       <section className="cartao zona-perigo">

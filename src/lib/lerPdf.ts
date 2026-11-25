@@ -3,7 +3,8 @@
 // tecnologias conhecidas. A pessoa sempre confere depois, porque cada currículo é de um jeito.
 
 import type { Experiencia, Formacao, GrupoDeCompetencias, Mestre, Projeto } from './tipos'
-import { mestreVazio, novoId } from './mestre'
+import { mestreVazio, normalizarMestre, novoId } from './mestre'
+import { dados } from './dados'
 import { competenciasNoTexto, grupoDe, norm } from './analise'
 
 // ---------- 1) PDF → linhas de texto ----------
@@ -265,4 +266,31 @@ export function resumoDoImport(m: Mestre) {
     m.idiomas.length && 'idiomas',
   ].filter(Boolean)
   return partes.join(', ')
+}
+
+// ---------- 3) leitura com IA (mais precisa) ----------
+
+/**
+ * Manda o texto do PDF pra função do servidor (api/ler-curriculo.js), que pede pra IA
+ * organizar tudo no formato do currículo mestre. Devolve null quando a IA não está
+ * disponível (modo demonstração, rodando no PC ou sem chave configurada): aí o app
+ * usa o leitor sem IA aqui de cima.
+ */
+export async function lerCurriculoComIA(linhas: string[]): Promise<Mestre | null> {
+  const token = await dados.token()
+  if (!token) return null
+  let r: Response
+  try {
+    r = await fetch('/api/ler-curriculo', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+      body: JSON.stringify({ texto: linhas.join('\n') }),
+    })
+  } catch {
+    return null // sem internet ou sem servidor
+  }
+  if (r.status === 404 || r.status === 501) return null
+  const corpo = await r.json().catch(() => ({}))
+  if (!r.ok || !corpo.curriculo) throw new Error(corpo.erro || 'Não consegui ler esse PDF agora.')
+  return normalizarMestre(corpo.curriculo)
 }

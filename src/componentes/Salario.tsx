@@ -39,6 +39,11 @@ export function Salario({ estimativa }: { estimativa: Estimativa | null | undefi
       <p className="dica salario-fonte">
         {estimativa.tipo === 'estimado' && 'Estimativa de mercado, não garantia. '}Fonte: {estimativa.fonte}.
       </p>
+      {estimativa.busca && (
+        <a className="botao leve pequeno" href={estimativa.busca} target="_blank" rel="noopener noreferrer" style={{ marginTop: 10 }}>
+          Conferir no Google ↗
+        </a>
+      )}
     </div>
   )
 }

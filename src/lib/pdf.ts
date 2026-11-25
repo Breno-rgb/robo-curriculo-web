@@ -25,7 +25,7 @@ function medirAltura(html: string): Promise<number> {
 
 export type Ajustado = { html: string; ajuste: string; paginas: number }
 
-export async function ajustarParaUmaPagina(cv: CurriculoMontado): Promise<Ajustado> {
+export async function ajustarParaUmaPagina(cv: CurriculoMontado, cor?: string): Promise<Ajustado> {
   const tres = { ...cv, projetos: cv.projetos.slice(0, 3) }
   const semOpcional = { ...tres, experiencias: tres.experiencias.filter((e) => !e.opcional) }
   const enxuto = {
@@ -48,7 +48,7 @@ export async function ajustarParaUmaPagina(cv: CurriculoMontado): Promise<Ajusta
 
   let ultimo: Ajustado = { html: '', ajuste: '', paginas: 1 }
   for (const [versao, zoom, ajuste] of tentativas) {
-    const html = montarHtml(versao, zoom)
+    const html = montarHtml(versao, zoom, cor)
     const altura = await medirAltura(html)
     ultimo = { html, ajuste, paginas: Math.ceil(altura / A4.altura) }
     if (altura <= A4.altura - 8) return ultimo // 8px de folga pra diferença entre tela e impressão

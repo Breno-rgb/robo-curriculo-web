@@ -1,4 +1,4 @@
-// Desenha o currículo em HTML (fundo branco, detalhes laranja).
+// Desenha o currículo em HTML (fundo branco, detalhes na cor que a pessoa escolher; laranja é o padrão).
 // Coluna única e texto de verdade: é o formato que os sistemas de triagem (ATS) leem melhor.
 // Na tela ele aparece como uma folha A4; na impressão ("Salvar como PDF") vira o PDF.
 
@@ -17,7 +17,21 @@ function link(texto: string) {
 // A4 a 96 dpi = 794 × 1123 px. As margens ficam como "padding" na tela e como margem da página na impressão.
 export const A4 = { largura: 794, altura: 1123 }
 
-export function montarHtml(cv: CurriculoMontado, zoom = 1) {
+/** Cores dos detalhes do currículo: `linha` pros traços e pontinhos, `texto` pros títulos (um pouco mais escuro, pra ler bem). */
+export const CORES = [
+  { id: 'preto', nome: 'Preto', linha: '#334155', texto: '#0f172a' },
+  { id: 'azul', nome: 'Azul', linha: '#2563eb', texto: '#1d4ed8' },
+  { id: 'verde', nome: 'Verde', linha: '#16a34a', texto: '#15803d' },
+  { id: 'vermelho', nome: 'Vermelho', linha: '#dc2626', texto: '#b91c1c' },
+  { id: 'laranja', nome: 'Laranja', linha: '#f97316', texto: '#ea580c' },
+  { id: 'roxo', nome: 'Roxo', linha: '#7c3aed', texto: '#6d28d9' },
+  { id: 'rosa', nome: 'Rosa', linha: '#db2777', texto: '#be185d' },
+] as const
+export const COR_PADRAO = 'laranja'
+export const corDoCurriculo = (id?: string) => CORES.find((c) => c.id === id) ?? CORES.find((c) => c.id === COR_PADRAO)!
+
+export function montarHtml(cv: CurriculoMontado, zoom = 1, cor?: string) {
+  const { linha, texto } = corDoCurriculo(cor)
   const c = cv.contatos
   const contatos = [c.cidade, c.telefone, c.email, c.linkedin, c.github, c.portfolio]
     .filter(Boolean).map((x) => `<span class="ct">${link(x)}</span>`).join('')
@@ -74,14 +88,14 @@ export function montarHtml(cv: CurriculoMontado, zoom = 1) {
   }
   @media print { body { width: auto; } }
   a { color: inherit; text-decoration: none; }
-  header { border-bottom: 2px solid #f97316; padding-bottom: 8px; margin-bottom: 11px; }
+  header { border-bottom: 2px solid ${linha}; padding-bottom: 8px; margin-bottom: 11px; }
   h1 { font-size: 20pt; letter-spacing: -0.3px; color: #0f172a; }
-  .titulo { color: #ea580c; font-size: 11pt; font-weight: bold; margin-top: 1px; }
+  .titulo { color: ${texto}; font-size: 11pt; font-weight: bold; margin-top: 1px; }
   .contatos { display: flex; flex-wrap: wrap; column-gap: 14px; row-gap: 1px; color: #475569; font-size: 8.6pt; margin-top: 6px; }
   .ct { white-space: nowrap; }
-  .ct + .ct::before { content: '·'; color: #f97316; margin-left: -9px; margin-right: 5px; }
+  .ct + .ct::before { content: '·'; color: ${linha}; margin-left: -9px; margin-right: 5px; }
   section { margin-bottom: 9px; }
-  h2 { font-size: 9pt; text-transform: uppercase; letter-spacing: 0.08em; color: #ea580c; border-bottom: 1px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 6px; }
+  h2 { font-size: 9pt; text-transform: uppercase; letter-spacing: 0.08em; color: ${texto}; border-bottom: 1px solid #e2e8f0; padding-bottom: 3px; margin-bottom: 6px; }
   p, li, .grupo { color: #334155; }
   .grupo { margin-bottom: 2px; }
   .grupo-nome, .grupo strong, .item-topo strong { color: #0f172a; font-weight: bold; }

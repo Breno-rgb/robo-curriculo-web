@@ -5,15 +5,15 @@ import { dados } from '../lib/dados'
 import { classeDaNota } from '../componentes/Aderencia'
 import { Visualizador, useCurriculoPronto } from '../componentes/Folha'
 
-type Props = { lista: Candidatura[] | null; nome: string; aoMudar: (lista: Candidatura[]) => void }
+type Props = { lista: Candidatura[] | null; nome: string; cor?: string; aoMudar: (lista: Candidatura[]) => void }
 
 const data = (iso: string) => new Date(iso).toLocaleDateString('pt-BR')
 
-export function Realizados({ lista, nome, aoMudar }: Props) {
+export function Realizados({ lista, nome, cor, aoMudar }: Props) {
   const [vendo, setVendo] = useState<Candidatura | null>(null)
   const [apagando, setApagando] = useState<string | null>(null)
   const [erro, setErro] = useState('')
-  const pronto = useCurriculoPronto(vendo?.resultado.curriculo ?? null)
+  const pronto = useCurriculoPronto(vendo?.resultado.curriculo ?? null, cor)
 
   if (!lista) return <div className="vazio">Carregando…</div>
 

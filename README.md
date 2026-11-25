@@ -63,8 +63,10 @@ Nunca use a chave **secret / service_role** no site. A publishable pode ficar p�
 | `src/componentes/Aderencia.tsx` | A caixa da nota, pontos fortes e o que falta |
 | `src/lib/analise.ts` | O cérebro: lê a vaga (de qualquer área), calcula a nota e monta o currículo |
 | `src/lib/salario.ts` | Estimativa de salário ("Quanto pedir") |
-| `src/lib/lerPdf.ts` | Lê o PDF do currículo (pdf.js) e preenche o currículo mestre |
-| `src/lib/curriculoHtml.ts` | O desenho do currículo (A4) |
+| `src/lib/lerPdf.ts` | Lê o PDF do currículo (pdf.js) e preenche o currículo mestre (com IA ou sem) |
+| `api/ler-curriculo.js` | Função do servidor (Vercel): manda o texto do PDF pra IA e devolve organizado |
+| `src/componentes/Tutorial.tsx` | Pop-ups de passo a passo pra quem acabou de criar a conta |
+| `src/lib/curriculoHtml.ts` | O desenho do currículo (A4) e as 7 cores |
 | `src/lib/pdf.ts` | Faz caber em 1 página e abre a impressão |
 | `src/lib/dados.ts` | Fala com o Supabase (ou com o navegador no modo demonstração) |
 | `supabase/schema.sql` | Tabelas, regras de segurança (RLS) e a função de apagar conta |
@@ -73,16 +75,34 @@ Nunca use a chave **secret / service_role** no site. A publishable pode ficar p�
 
 Fica abaixo da aderência. É uma referência, não garantia:
 
-1. Se a vaga informa o salário, mostra o valor da vaga (ignora VR, VT e outros benefícios).
+Todas as estimativas saem **10% abaixo** das tabelas (pra pedir com folga) e nunca abaixo do salário mínimo.
+
+1. Se a vaga informa o salário, mostra o valor da vaga (ignora VR, VT e outros benefícios). Se for uma faixa, sugere 10% abaixo do topo.
 2. Vagas de tecnologia: faixa por área (front, back, full-stack), nível e regime (CLT/PJ), da [tabela de cargos e salários TI 2026 da Nerdin](https://www.nerdin.com.br/plano_de_cargos_e_salarios_ti.php).
 3. Outras profissões: piso, média e teto de contratação CLT do Novo CAGED, via [salario.com.br](https://www.salario.com.br/tabela-salarial/) (nov/2026), mais algumas médias nacionais.
-4. Cargo fora das tabelas: o app avisa e oferece uma busca, em vez de chutar.
+4. Outras funções de TI (suporte, dados, QA, DevOps, mobile, UX, infra, segurança, produto) por nível.
+5. Cargo fora das tabelas: estima pelo tipo de cargo (auxiliar, assistente, técnico, analista, coordenador, gerente...) e oferece uma busca.
+6. Nem isso: avisa em vez de chutar.
 
 Os valores ficam em `src/lib/salario.ts` e precisam de atualização de tempos em tempos.
 
-## Importar currículo em PDF
+## Importar currículo (PDF ou JSON)
 
-Sem IA: o app lê o texto do PDF, procura os títulos de seção (Experiência, Formação, Projetos...), e-mail, telefone, links e as tecnologias que conhece. Funciona melhor com PDF de texto (não escaneado). A pessoa sempre confere antes de salvar.
+- **JSON**: o mais preciso. Aceita a cópia baixada no Perfil, o modelo ("Baixe o modelo") e o `curriculo-mestre.json` do robô de terminal.
+- **PDF com IA** (recomendado): o navegador tira o texto do PDF (pdf.js) e manda pra função `api/ler-curriculo.js`, que roda na Vercel e pede pra IA do Google (Gemini) organizar tudo no formato do currículo mestre. A chave da IA fica só no servidor. A função só aceita quem está logado.
+- **PDF sem IA** (reserva): se a IA não estiver configurada (ou no modo demonstração / rodando no PC), o app usa o leitor por palavras-chave de `src/lib/lerPdf.ts`. Funciona em currículos simples, mas erra em modelos com colunas, ícones etc.
+
+A pessoa sempre confere antes de salvar.
+
+### Ligar a leitura com IA (grátis)
+
+1. Entre em [aistudio.google.com](https://aistudio.google.com) com uma conta Google → **Get API key** → **Create API key**.
+2. Na Vercel: **Settings → Environment Variables** → adicione `GEMINI_API_KEY` com a chave (sem `VITE_` na frente, pra ela **não** ir pro site).
+3. **Deployments → ⋯ → Redeploy**.
+
+Opcional: `GEMINI_MODEL` pra escolher o modelo (padrão: `gemini-3.5-flash`, com reservas automáticas).
+
+Privacidade: no plano grátis o Google pode usar o que é enviado pra melhorar os produtos dele. Pra um app com usuários de verdade, vale ativar o plano pago (cobra centavos por currículo) ou avisar isso na tela.
 
 ## Apagar conta
 

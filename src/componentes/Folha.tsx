@@ -5,14 +5,17 @@ import { A4 } from '../lib/curriculoHtml'
 import { ajustarParaUmaPagina, imprimir, type Ajustado } from '../lib/pdf'
 
 /** Monta o HTML que cabe em 1 página sempre que o currículo muda. */
-export function useCurriculoPronto(curriculo: CurriculoMontado | null) {
+export function useCurriculoPronto(curriculo: CurriculoMontado | null, cor?: string) {
   const [pronto, setPronto] = useState<Ajustado | null>(null)
+  const anterior = useRef<CurriculoMontado | null>(null)
   useEffect(() => {
     let ativo = true
-    setPronto(null)
-    if (curriculo) ajustarParaUmaPagina(curriculo).then((r) => ativo && setPronto(r))
+    // Currículo novo: limpa a folha. Só trocou a cor: mantém a folha atual até a nova ficar pronta.
+    if (curriculo !== anterior.current) setPronto(null)
+    anterior.current = curriculo
+    if (curriculo) ajustarParaUmaPagina(curriculo, cor).then((r) => ativo && setPronto(r))
     return () => { ativo = false }
-  }, [curriculo])
+  }, [curriculo, cor])
   return pronto
 }
 

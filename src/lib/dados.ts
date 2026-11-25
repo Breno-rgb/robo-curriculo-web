@@ -30,6 +30,8 @@ export type Servico = {
   criarCandidatura(c: NovaCandidatura): Promise<Candidatura>
   atualizarStatus(id: string, status: string): Promise<void>
   apagarCandidatura(id: string): Promise<void>
+  /** Chave da sessão (pra provar ao servidor quem está pedindo). No modo demonstração é null. */
+  token(): Promise<string | null>
 }
 
 // ---------- mensagens de erro em português ----------
@@ -64,6 +66,10 @@ function criarSupabase(url: string, chave: string): Servico {
 
   return {
     modo: 'supabase',
+    async token() {
+      const { data } = await sb.auth.getSession()
+      return data.session?.access_token ?? null
+    },
     async sessaoAtual() {
       const { data } = await sb.auth.getSession()
       return usuario(data.session?.user)
@@ -183,6 +189,7 @@ function criarDemo(): Servico {
 
   return {
     modo: 'demo',
+    async token() { return null },
     async sessaoAtual() { return atual() },
     aoMudarSessao(cb) { ouvintes.add(cb); return () => ouvintes.delete(cb) },
     async entrar(email, senha) {

@@ -9,17 +9,18 @@ import { dados } from '../lib/dados'
 import { FolhaA4, Visualizador, useCurriculoPronto } from '../componentes/Folha'
 import { Aderencia } from '../componentes/Aderencia'
 import { Salario } from '../componentes/Salario'
+import { CORES, corDoCurriculo } from '../lib/curriculoHtml'
 
-type Props = { mestre: Mestre; aoCriar: (c: Candidatura) => void }
+type Props = { mestre: Mestre; aoCriar: (c: Candidatura) => void; aoMudarCor: (cor: string) => void }
 
-export function Inicio({ mestre, aoCriar }: Props) {
+export function Inicio({ mestre, aoCriar, aoMudarCor }: Props) {
   const [texto, setTexto] = useState('')
   const [erro, setErro] = useState('')
   const [gerando, setGerando] = useState(false)
   const [ultima, setUltima] = useState<Candidatura | null>(null)
   const [vendo, setVendo] = useState(false)
   const folha = useRef<HTMLIFrameElement>(null)
-  const pronto = useCurriculoPronto(ultima?.resultado.curriculo ?? null)
+  const pronto = useCurriculoPronto(ultima?.resultado.curriculo ?? null, mestre.cor)
 
   const mestreVazio = !mestre.nome.trim() && todasCompetencias(mestre).length === 0
   const nomeArquivo = ultima ? `Curriculo - ${mestre.nome || 'curriculo'} - ${ultima.empresa}` : ''
@@ -76,6 +77,17 @@ export function Inicio({ mestre, aoCriar }: Props) {
         <div className="lateral" aria-live="polite">
           <section className="cartao">
             {ultima && <p className="vaga-titulo">{ultima.empresa} <span>· {ultima.cargo}</span></p>}
+            <fieldset className="cores">
+              <legend>Cor do currículo: <strong>{corDoCurriculo(mestre.cor).nome}</strong></legend>
+              <div className="cores-lista">
+                {CORES.map((c) => (
+                  <label key={c.id} className="cor" title={c.nome} style={{ '--cor': c.linha } as React.CSSProperties}>
+                    <input type="radio" name="cor-curriculo" value={c.id} checked={corDoCurriculo(mestre.cor).id === c.id} onChange={() => aoMudarCor(c.id)} />
+                    <span className="so-leitor">{c.nome}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
             <FolhaA4 html={pronto?.html ?? null} folhaRef={folha} vazio={ultima ? 'Montando o PDF…' : 'O currículo aparece aqui.'} />
             <div className="botoes-2">
               <button className="botao leve" disabled={!pronto} onClick={() => setVendo(true)}>Visualizar</button>
